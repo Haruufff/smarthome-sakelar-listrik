@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@font-face {
+    font-family: "digital7";
+    src: url("../assets/fonts/digital-7.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "digital7-mono";
+    src: url("../assets/fonts/digital-7 (mono).ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "digital7-italic";
+    src: url("../assets/fonts/digital-7 (italic).ttf") format("truetype");
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: "digital7-mono-italic";
+    src: url("../assets/fonts/digital-7 (mono italic).ttf") format("truetype");
+    font-weight: 400;
+}
+
+@theme {
+    --font-digital7: "digital7", sans-serif;
+    --font-digital7-mono: "digital7-mono", sans-serif;
+    --font-digital7-italic: "digital7-italic", sans-serif;
+    --font-digital7-monoitalic: "digital7-mono-italic", sans-serif;
+}
+
+@layer components {
+    .active-menu {
+        @apply text-white;
+        @apply bg-[#5d87ff];
+    }
+
+    .card {
+        @apply rounded-2xl;
+        @apply border;
+        @apply border-gray-300;
+        @apply px-4;
+        @apply pb-5;
+        @apply bg-white;
+    }
+
+    .header-1 {
+        @apply font-semibold;
+        @apply py-3;
+        @apply pb-2;
+    }
+}
