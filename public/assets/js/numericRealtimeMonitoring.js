@@ -25,5 +25,5 @@ $(document).ready(function() {
 }
 
     updateDisplays();
-    setInterval(updateDisplays, 30000);
+    setInterval(updateDisplays, 3000);
 });

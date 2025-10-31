@@ -122,13 +122,6 @@ class RealtimeMonitoringChart {
                         name: 'Energy (kWh)',
                         data: data.energy || []
                     }],
-
-                    xaxis: {
-                        title: {
-                            text: 'Time'
-                        },
-                        categories: data.seconds
-                    }
                 });
                 console.log('Chart updated with', data.energy.length, 'data points');
             },

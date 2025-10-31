@@ -42,7 +42,7 @@ class MonitoringApiController extends Controller
     }
 
     public function getRealtimeChart() {
-        $records = Monitorings::orderBy('datetime', 'DESC')->take(100)->get();
+        $records = Monitorings::orderBy('datetime', 'DESC')->take(50)->get();
         $records = $records->sortBy('datetime')->values();
 
         return response()->json([

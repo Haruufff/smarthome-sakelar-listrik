@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\SwitchesApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {return $request->user();})->middleware('auth:sanctum');
+// Route::get('/user', function (Request $request) {return $request->user();})->middleware('auth:sanctum');
 
 Route::prefix('monitoring')->group( function() {
     Route::get('/history/{month}', [MonitoringApiController::class, 'getMonthlyData']);

@@ -11,7 +11,7 @@ $(document).on('submit', '#updatePasswordForm', function (e) {
         url: '/profile/update-password',
         type: 'PATCH',
         headers: {
-            'X-CSRF-TOKEN': csrfTokenPassword,
+            'X-CSRF-TOKEN': csrfToken,
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         },
