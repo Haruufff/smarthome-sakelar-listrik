@@ -1,8 +1,7 @@
 $(document).ready(function() {
-    
     $(document).on('click', '[data-action="logout"]', function(event) {
         event.preventDefault();
-        
+
         const csrfToken = $('meta[name="csrf-token"]').attr('content');
         
         $.ajax({

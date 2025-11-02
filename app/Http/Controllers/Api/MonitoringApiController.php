@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Monitorings;
 use App\Models\Taxes;
 use Carbon\Carbon;
-use Illuminate\Contracts\Queue\Monitor;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 use function Pest\Laravel\json;
