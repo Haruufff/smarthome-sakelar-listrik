@@ -2,19 +2,21 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+#include <WiFiClientSecure.h>
 #include <LiquidCrystal_I2C.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <PZEM004Tv30.h>
 #include <SoftwareSerial.h>
+#include <EEPROM.h>
 
-const char* ssid = "HENI";
-const char* password = "SaMaWa04";
+const char* ssid = "TugasAkhir";
+const char* password = "TugasAkhir";
 
 // API
-const char* postEnergy = "http://192.168.1.3:8080/api/monitoring/post-energy-data";
-const char* getSwitches = "http://192.168.1.3:8080/api/switches";
+const char* getSwitches = "https://smarthome-saklarlistrik.site/api/switches";
+const char* postEnergy = "https://smarthome-saklarlistrik.site/api/monitoring/post-energy-data";
 
 // PZEM-004T Setup (SoftwareSerial)
 SoftwareSerial pzemSerial(D7, D6); // RX=D7, TX=D6
@@ -29,9 +31,11 @@ const int SSR4_PIN = D8;
 unsigned long previousSendMillis = 0;
 unsigned long previousSwitchCheckMillis = 0;
 unsigned long previousLCDUpdateMillis = 0;
+unsigned long previousMonthCheckMillis = 0;
 const long sendInterval = 5000; // Send data every 5 seconds
 const long switchCheckInterval = 1000; // check switches every 1 second
 const long lcdUpdateInterval = 2000; // Update LCD every 2 seconds
+const long monthCheckInterval = 3600000; // Check month change every 1 hour
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -39,8 +43,26 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 28800, 60000);
 int lcdDisplayMode = 0;
 
+// EEPROM addresses for storing last month
+const int EEPROM_ADDR_MONTH = 0;
+const int EEPROM_ADDR_YEAR = 1;
+const int EEPROM_SIZE = 4;
+
+int lastStoredMonth = 0;
+int lastStoredYear = 0;
+
 void setup() {
   Serial.begin(9600);
+
+  EEPROM.begin(EEPROM_SIZE);
+
+  lastStoredMonth = EEPROM.read(EEPROM_ADDR_MONTH);
+  lastStoredYear = EEPROM.read(EEPROM_ADDR_YEAR) + 2000; // Store only last 2 digits
+
+  Serial.print("Last stored month: ");
+  Serial.print(lastStoredMonth);
+  Serial.print("/");
+  Serial.println(lastStoredYear);
 
   pzemSerial.begin(9600);
   Serial.println("PZEM-004T initialized");
@@ -78,6 +100,8 @@ void setup() {
     Serial.println("NTP time synchronized");
     Serial.println("Current time: " + getFormattedDateTime());
 
+    checkAndResetMonthlyEnergy();
+
     getSwitchStates();
 
     lcd.clear();
@@ -107,7 +131,7 @@ void loop() {
     }
   }
     
-    // Send monitoring data
+  // Send monitoring data
   if (currentMillis - previousSendMillis >= sendInterval) {
     previousSendMillis = currentMillis;
     
@@ -131,6 +155,17 @@ void loop() {
     previousLCDUpdateMillis = currentMillis;
     updateLCDDisplay();
   }
+
+  // Check for month change periodically
+  if (currentMillis - previousMonthCheckMillis >= monthCheckInterval) {
+    previousMonthCheckMillis = currentMillis;
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      timeClient.update();
+      checkAndResetMonthlyEnergy();
+    }
+  }
+
 
   delay(100);
 }
@@ -275,7 +310,8 @@ void updateLCDDisplay() {
 }
 
 void sendMonitoringData() {
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   
   Serial.println("=================================");
@@ -304,10 +340,10 @@ void sendMonitoringData() {
   
   int taxId = 1;
   
-  // Get formatted datetime from NTP
+  // Get formatted datetime
   String datetime = getFormattedDateTime();
   
-  // Create JSON payload
+  // Create JSON
   StaticJsonDocument<256> doc;
   doc["voltage"] = voltage;
   doc["current"] = current;
@@ -323,8 +359,9 @@ void sendMonitoringData() {
   Serial.println("Sending data to API:");
   Serial.println(jsonPayload);
   
-  // Send HTTP POST request
+  // Send POST request
   http.begin(client, postEnergy);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   
   int httpResponseCode = http.POST(jsonPayload);
@@ -371,12 +408,14 @@ String getFormattedDateTime() {
 }
 
 void getSwitchStates() {
-  WiFiClient client;
+  WiFiClientSecure client;
+  client.setInsecure();
   HTTPClient http;
   
   Serial.println("----- Checking Switch States -----");
   
   http.begin(client, getSwitches);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http.addHeader("Content-Type", "application/json");
   
   int httpResponseCode = http.GET();
@@ -412,7 +451,7 @@ void getSwitchStates() {
         int pinState;
         
         if (is_actived && state_status == "LOW") {
-          pinState = LOW;  // Turn ON SSR (active LOW)
+          pinState = LOW;  // Turn ON SSR
         } else {
           pinState = HIGH; // Turn OFF SSR
         }
@@ -443,4 +482,71 @@ void getSwitchStates() {
   }
   
   http.end();
+}
+
+void checkAndResetMonthlyEnergy() {
+  unsigned long epochTime = timeClient.getEpochTime();
+  time_t rawtime = epochTime;
+  struct tm * ti;
+  ti = localtime(&rawtime);
+  
+  int currentMonth = ti->tm_mon + 1;
+  int currentYear = ti->tm_year + 1900;
+  
+  Serial.println("=== Month Check ===");
+  Serial.print("Current: ");
+  Serial.print(currentMonth);
+  Serial.print("/");
+  Serial.println(currentYear);
+  Serial.print("Stored: ");
+  Serial.print(lastStoredMonth);
+  Serial.print("/");
+  Serial.println(lastStoredYear);
+  
+  // Check if this is first run (EEPROM uninitialized) or month has changed
+  if (lastStoredMonth == 0 || lastStoredMonth == 255 || 
+      currentMonth != lastStoredMonth || currentYear != lastStoredYear) {
+    
+    Serial.println("Month changed! Resetting energy counter...");
+    
+    // Display on LCD
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("New Month!");
+    lcd.setCursor(0, 1);
+    lcd.print("Resetting Energy");
+    delay(3000);
+    
+    // Reset PZEM energy counter
+    if (pzem.resetEnergy()) {
+      Serial.println("Energy counter reset successfully!");
+      
+      // Store new month and year in EEPROM
+      EEPROM.write(EEPROM_ADDR_MONTH, currentMonth);
+      EEPROM.write(EEPROM_ADDR_YEAR, currentYear - 2000); // Store only last 2 digits
+      EEPROM.commit();
+      
+      lastStoredMonth = currentMonth;
+      lastStoredYear = currentYear;
+      
+      Serial.println("New month stored in EEPROM");
+      
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Reset Success!");
+      delay(2000);
+    } else {
+      Serial.println("✗ Failed to reset energy counter");
+      
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Reset Failed!");
+      lcd.setCursor(0, 1);
+      lcd.print("Check PZEM");
+      delay(2000);
+    }
+  } else {
+    Serial.println("Same month - no reset needed");
+  }
+  Serial.println("==================");
 }
