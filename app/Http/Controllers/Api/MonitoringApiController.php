@@ -57,6 +57,7 @@ class MonitoringApiController extends Controller
 
     public function getRealtimeMonitoringData() {
         $latest = Monitorings::latest('datetime')->first();
+        $latestCost = Monitorings::where('total_price', '>', 0)->latest('datetime')->first();
 
         if (!$latest) {
             return response()->json([
@@ -75,7 +76,7 @@ class MonitoringApiController extends Controller
             'energy' => $latest->voltage,
             'power' => $latest->current,
             'frequency' => $latest->frequency ?? 50,
-            'cost' => $latest->total_price ?? 0,
+            'cost' => $latestCost ? $latestCost->total_price : 0,
             'datetime' => $latest->datetime
         ]);
     }
@@ -192,7 +193,15 @@ class MonitoringApiController extends Controller
         $datetime = [];
 
         foreach ($grouped as $monthKey => $monthRecords) {
-            $lastRecord = $monthRecords->sortByDesc('datetime')->first();
+            $filteredZeroRecords = $monthRecords->filter(function ($record) {
+                return $record->total_price > 0;
+            });
+            
+            if ($filteredZeroRecords->isEmpty()) {
+                continue;
+            }
+            
+            $lastRecord = $filteredZeroRecords->sortByDesc('datetime')->first();
             $recordDate = Carbon::parse($lastRecord->datetime);
             $monthName = Carbon::createFromDate($recordDate->year, $recordDate->month, 1)->format('M Y');
             

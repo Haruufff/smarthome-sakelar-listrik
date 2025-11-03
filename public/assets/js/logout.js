@@ -16,6 +16,12 @@ $(document).ready(function() {
                 window.location.href = '/';
             },
             error: function(xhr, status, error) {
+                if (xhr.status === 419) {
+                    console.log('Session expired or CSRF mismatch, redirecting...');
+                    window.location.href = '/';
+                    return;
+                }
+                
                 console.error('Logout failed:', { status, error });
                 alert('An error occurred during logout. Please try again.');
             }

@@ -21,14 +21,14 @@ class AuthController extends Controller
     }
 
     public function logout(Request $request) {
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         Auth::logout();
 
         if($request->expectsJson()) {
             return response()->json(['message' => 'Logged out successfully'], 200);
         }
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
 
         return redirect('/');
     }

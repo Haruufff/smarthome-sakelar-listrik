@@ -1,7 +1,7 @@
 @extends('layout.layout')
 
 @section('content')
-    <div class="content sm:mx-10 sm:pt-10 sm:flex-col space-y-5 grow sm:pl-60">
+    <div class="content sm:mx-10 sm:pt-10 sm:flex-col space-y-5 grow pb-25 sm:pl-60">
         <h1 class="text-3xl font-bold max-sm:text-center mb-10 pt-10">Monitoring History</h1>
         @include('partials.chartMonthlyOverview')
         @include('partials.chartMonthly')

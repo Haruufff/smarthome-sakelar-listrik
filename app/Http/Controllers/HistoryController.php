@@ -14,7 +14,7 @@ class HistoryController extends Controller
                 return Carbon::parse($item->datetime)->startOfMonth(); 
             })->unique()
             ->map(function ($datetime) { 
-                $lastData = Monitorings::whereYear('datetime', $datetime->year)->whereMonth('datetime', $datetime->month)->orderBy('datetime', 'DESC')->first();
+                $lastData = Monitorings::where('total_price', '>', 0)->whereYear('datetime', $datetime->year)->whereMonth('datetime', $datetime->month)->orderBy('datetime', 'DESC')->first();
                 return (object) [
                     'month' => $datetime->month,
                     'year' => $datetime->year,
