@@ -11,8 +11,8 @@
 #include <SoftwareSerial.h>
 #include <EEPROM.h>
 
-const char* ssid = "HENI";
-const char* password = "SaMaWa04";
+const char* ssid = "TugasAkhir";
+const char* password = "TugasAkhir";
 
 // API
 const char* getSwitches = "https://smarthome-saklarlistrik.site/api/switches";
