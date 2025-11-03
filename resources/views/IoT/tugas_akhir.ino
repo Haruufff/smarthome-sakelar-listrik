@@ -11,22 +11,22 @@
 #include <SoftwareSerial.h>
 #include <EEPROM.h>
 
-const char* ssid = "TugasAkhir";
-const char* password = "TugasAkhir";
+const char* ssid = "HENI";
+const char* password = "SaMaWa04";
 
 // API
 const char* getSwitches = "https://smarthome-saklarlistrik.site/api/switches";
 const char* postEnergy = "https://smarthome-saklarlistrik.site/api/monitoring/post-energy-data";
 
 // PZEM-004T Setup (SoftwareSerial)
-SoftwareSerial pzemSerial(D7, D6); // RX=D7, TX=D6
+SoftwareSerial pzemSerial(D7, D0); // RX=D7, TX=D0
 PZEM004Tv30 pzem(pzemSerial);
 
 // SSR PINS
 const int SSR1_PIN = D3;
 const int SSR2_PIN = D4;
 const int SSR3_PIN = D5;
-const int SSR4_PIN = D8;
+const int SSR4_PIN = D6;
 
 unsigned long previousSendMillis = 0;
 unsigned long previousSwitchCheckMillis = 0;
