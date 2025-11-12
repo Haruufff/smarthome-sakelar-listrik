@@ -25,7 +25,7 @@
         </div>
     </div>
 
-    <div class="rounded-xl border border-gray-200 px-4 pb-5 sm:mb-30 bg-white">
+    {{-- <div class="rounded-xl border border-gray-200 px-4 pb-5 sm:mb-30 bg-white">
         <div class="py-5">
             <span class="text-lg font-semibold pl-2 pb-5">Internet Connection</span>
         </div>
@@ -43,7 +43,7 @@
         <div class="flex justify-end pt-2">
             <button type="button" data-modal-open="connectionModal" class="bg-[#5d87ff] text-white font-semibold py-2 px-5 rounded-md hover:bg-[#85a4f8] cursor-pointer">Edit Connection</button>
         </div>
-    </div>
+    </div> --}}
 
     <div class="rounded-xl border border-gray-200 px-4 p-4 mb-10 bg-white sm:sr-only">
         <button type="button" data-modal-open="logoutModal" class="text-md py-3 bg- w-full bg-red-300 text-white rounded-md">
@@ -54,13 +54,13 @@
 
 @include('partials.modalEditProfile')
 @include('partials.modalEditPassword')
-@include('partials.modalEditConnection')
+{{-- @include('partials.modalEditConnection') --}}
 @endsection
 
 @push('javascript')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ asset('assets/js/editProfile.js') }}"></script>
-    <script src="{{ asset('assets/js/editConection.js') }}"></script>
+    {{-- <script src="{{ asset('assets/js/editConection.js') }}"></script> --}}
     <script src="{{ asset('assets/js/editPassword.js') }}"></script>
     <script src="{{ asset('assets/js/logout.js') }}"></script>
 @endpush
