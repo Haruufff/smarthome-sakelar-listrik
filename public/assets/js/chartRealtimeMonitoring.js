@@ -134,6 +134,6 @@ class RealtimeMonitoringChart {
     startAutoRefresh() {
         setInterval(() => {
             this.loadData();
-        }, 3000);
+        }, 60000);
     }
 }
