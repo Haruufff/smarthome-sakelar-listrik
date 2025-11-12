@@ -21,8 +21,7 @@ class MonitoringApiController extends Controller
             'power'=> 'required',
             'energy'=> 'required',
             'frequency'=> 'required',
-            'tax_id'=> 'required|exists:taxes,id',
-            'datetime' => 'required'
+            'tax_id'=> 'required|exists:taxes,id'
         ]);
 
         $tax = Taxes::findOrFail($validated['tax_id']);
@@ -42,23 +41,23 @@ class MonitoringApiController extends Controller
     }
 
     public function getRealtimeChart() {
-        $records = Monitorings::orderBy('datetime', 'DESC')->take(50)->get();
-        $records = $records->sortBy('datetime')->values();
+        $records = Monitorings::orderBy('created_at', 'DESC')->take(50)->get();
+        $records = $records->sortBy('created_at')->values();
 
         return response()->json([
             'energy' => $records->pluck('energy'),
             'total_price' => $records->pluck('total_price'),
-            'seconds' => $records->pluck('datetime')->map(function ($time) {
+            'seconds' => $records->pluck('created_at')->map(function ($time) {
                 return Carbon::parse($time)->format('s');
             }),
-            'datetime' => $records->pluck('datetime')->map(function ($time) {
+            'datetime' => $records->pluck('created_at')->map(function ($time) {
                 return Carbon::parse($time)->format('Y-m-d H:i:s');
             }),
         ]);
     }
 
     public function getRealtimeMonitoringData() {
-        $latest = Monitorings::latest('datetime')->first();
+        $latest = Monitorings::latest('created_at')->first();
 
         if (!$latest) {
             return response()->json([
@@ -78,7 +77,7 @@ class MonitoringApiController extends Controller
             'power' => $latest->current,
             'frequency' => $latest->frequency ?? 50,
             'cost' => $latest->total_price ?? 0,
-            'datetime' => $latest->datetime
+            'datetime' => $latest->created_at
         ]);
     }
 
@@ -92,10 +91,10 @@ class MonitoringApiController extends Controller
             ], 400);
         }
 
-        $records = Monitorings::whereYear('datetime', $date->year)
-        ->whereMonth('datetime', $date->month)
-        ->orderBy('datetime')
-        ->get(['energy', 'datetime']);
+        $records = Monitorings::whereYear('created_at', $date->year)
+        ->whereMonth('created_at', $date->month)
+        ->orderBy('created_at')
+        ->get(['energy', 'created_at']);
 
         if ($records->isEmpty()) {
             return response()->json([
@@ -106,7 +105,7 @@ class MonitoringApiController extends Controller
             ], 404);
         }
 
-        $cost = Monitorings::whereYear('datetime', $date->year)->whereMonth('datetime', $date->month)->orderBy('datetime', 'DESC')->value('total_price');
+        $cost = Monitorings::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->orderBy('created_at', 'DESC')->value('total_price');
 
         $dailyData = [];
 
@@ -140,7 +139,7 @@ class MonitoringApiController extends Controller
     }
 
     public function getMonthlyAverage() {
-        $records = Monitorings::orderBy('datetime')->get();
+        $records = Monitorings::orderBy('created_at')->get();
 
         if ($records->isEmpty()) {
             return response()->json([
@@ -151,7 +150,7 @@ class MonitoringApiController extends Controller
         }
 
         $grouped = $records->groupBy(function ($item) {
-            $date = Carbon::parse($item->datetime);
+            $date = Carbon::parse($item->created_at);
             return $date->year . '-' . $date->month;
         });
 
@@ -161,7 +160,7 @@ class MonitoringApiController extends Controller
         foreach ($grouped as $monthKey => $monthRecords) {
             $avgEnergy = $monthRecords->avg('energy');
             $firstRecord = $monthRecords->first();
-            $recordDate = Carbon::parse($firstRecord->datetime);
+            $recordDate = Carbon::parse($firstRecord->created_at);
             $monthName = Carbon::createFromDate($recordDate->year, $recordDate->month, 1)->format('M Y');
 
             $energy[] = round($avgEnergy, 2);
@@ -175,7 +174,7 @@ class MonitoringApiController extends Controller
     }
 
     public function getMonthlyTotalPrice() {
-        $records = Monitorings::orderBy('datetime')->get();
+        $records = Monitorings::orderBy('created_at')->get();
 
         if ($records->isEmpty()) {
             return response()->json([
@@ -186,7 +185,7 @@ class MonitoringApiController extends Controller
         }
 
         $grouped = $records->groupBy(function ($item) {
-            $date = Carbon::parse($item->datetime);
+            $date = Carbon::parse($item->created_at);
             return $date->year . '-' . $date->month;
         });
 
@@ -194,8 +193,8 @@ class MonitoringApiController extends Controller
         $datetime = [];
 
         foreach ($grouped as $monthKey => $monthRecords) {
-            $lastRecord = $monthRecords->sortByDesc('datetime')->first();
-            $recordDate = Carbon::parse($lastRecord->datetime);
+            $lastRecord = $monthRecords->sortByDesc('created_at')->first();
+            $recordDate = Carbon::parse($lastRecord->created_at);
             $monthName = Carbon::createFromDate($recordDate->year, $recordDate->month, 1)->format('M Y');
             
             $totalPrice[] = $lastRecord->total_price;
