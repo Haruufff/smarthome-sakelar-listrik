@@ -9,7 +9,7 @@ class EnergyReset extends Model
     protected $fillable = [
         'month',
         'year',
-        'reset_required',
+        'reset_requested',
         'reset_completed',
         'requested_at',
         'completed_at'

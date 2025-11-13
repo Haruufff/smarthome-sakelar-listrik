@@ -151,9 +151,9 @@ class MonitoringApiController extends Controller
         }
 
         return response()->json([
-            'voltage' => $latest->energy,
+            'voltage' => $latest->voltage,
             'current' => $latest->power,
-            'energy' => $latest->voltage,
+            'energy' => $latest->energy,
             'power' => $latest->current,
             'frequency' => $latest->frequency ?? 50,
             'cost' => $latestCost ? $latestCost->total_price : 0,
