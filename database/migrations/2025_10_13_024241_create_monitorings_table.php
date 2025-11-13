@@ -20,7 +20,6 @@ return new class extends Migration
             $table->decimal('frequency', 5, 2)->nullable();
             $table->foreignId('tax_id')->constrained('taxes');
             $table->integer('total_price');
-            $table->datetime('datetime');
             $table->timestamps();
         });
     }
