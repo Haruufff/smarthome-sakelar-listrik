@@ -6,10 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Monitorings;
 use App\Models\Taxes;
 use Carbon\Carbon;
-use Illuminate\Contracts\Queue\Monitor;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 use function Pest\Laravel\json;
 
 class MonitoringApiController extends Controller
@@ -58,6 +55,7 @@ class MonitoringApiController extends Controller
 
     public function getRealtimeMonitoringData() {
         $latest = Monitorings::latest('created_at')->first();
+        $latestCost = Monitorings::where('total_price', '>', 0)->latest('created_at')->first();
 
         if (!$latest) {
             return response()->json([
@@ -76,7 +74,7 @@ class MonitoringApiController extends Controller
             'energy' => $latest->voltage,
             'power' => $latest->current,
             'frequency' => $latest->frequency ?? 50,
-            'cost' => $latest->total_price ?? 0,
+            'cost' => $latestCost ? $latestCost->total_price : 0,
             'datetime' => $latest->created_at
         ]);
     }
@@ -105,12 +103,10 @@ class MonitoringApiController extends Controller
             ], 404);
         }
 
-        $cost = Monitorings::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->orderBy('created_at', 'DESC')->value('total_price');
-
         $dailyData = [];
 
         foreach ($records as $record) {
-            $day = carbon::parse($record->datetime)->format('Y-m-d');
+            $day = carbon::parse($record->created_at)->format('Y-m-d');
 
             if (!isset($dailyData[$day])) {
                 $dailyData[$day] = [
@@ -180,7 +176,7 @@ class MonitoringApiController extends Controller
             return response()->json([
                 'message' => 'No data available',
                 'total_price' => [],
-                'datetime' => []
+                'created_at' => []
             ], 404);
         }
 
@@ -190,10 +186,18 @@ class MonitoringApiController extends Controller
         });
 
         $totalPrice = [];
-        $datetime = [];
+        $created_at = [];
 
         foreach ($grouped as $monthKey => $monthRecords) {
-            $lastRecord = $monthRecords->sortByDesc('created_at')->first();
+            $filteedZeroRecords = $monthRecords->filter(function ($record) {
+                return $record->total_price > 0;
+            });
+
+            if ($filteedZeroRecords->isEmpty()) {
+                continue;
+            }
+
+            $lastRecord = $filteedZeroRecords->sortByDesc('created_at')->first();
             $recordDate = Carbon::parse($lastRecord->created_at);
             $monthName = Carbon::createFromDate($recordDate->year, $recordDate->month, 1)->format('M Y');
             
