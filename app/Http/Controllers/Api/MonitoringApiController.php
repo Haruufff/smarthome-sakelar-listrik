@@ -3,14 +3,94 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\EnergyReset;
 use App\Models\Monitorings;
 use App\Models\Taxes;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
 use function Pest\Laravel\json;
 
 class MonitoringApiController extends Controller
 {
+    public function checkResetkWh() : JsonResponse {
+        $now = Carbon::now();
+        $currentMonth = $now->month;
+        $currentYear = $now->year;
+
+        $reset = EnergyReset::firstOrCreate(
+            ['month' => $currentMonth, 'year' => $currentYear],
+            ['reset_requested' => false, 'reset_completed' => false]
+        );
+
+        $requiredReset = $reset->reset_requested && !$reset->reset_completed;
+
+        return response()->json([
+            'required_reset' => $requiredReset,
+            'message' => $requiredReset ? 'Please Reset Energy Counter' : 'No Reset Needed',
+            'month' => $currentMonth,
+            'year' => $currentYear
+        ]);
+    }
+
+    public function confirmReset(Request $request) : JsonResponse {
+        $validated = $request->validate([
+            'success' => 'required|boolean'
+        ]);
+
+        $now = Carbon::now();
+        $reset = EnergyReset::where('month', $now->month)->where('year', $now->year)->first();
+
+        if(!$reset) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No Reset Record Found'
+            ], 404);
+        }
+
+        if ($validated['success']) {
+            $reset->update([
+                'reset_completed' => true,
+                'completed_at' => $now
+            ]);
+            Log::info('Energy Reset Completed', ['month' => $now->month, 'year' => $now->year]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Reset Confirmed'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Reset Failed'
+        ], 500);
+    }
+
+    private function autoCheckedReset() : void {
+        $now = Carbon::now();
+        $currentMonth = $now->month;
+        $currentYear = $now->year;
+
+        $existingReset = EnergyReset::where('month', $currentMonth)->where('year', $currentYear)->first();
+
+        if (!$existingReset) {
+            EnergyReset::create([
+                'month' => $currentMonth,
+                'year' => $currentYear,
+                'reset_requested' => true,
+                'reset_completed' => false,
+                'requested_at' => $now
+            ]);
+
+            Log::info('New month detected!', [
+                'month' => $currentMonth,
+                'year' => $currentYear
+            ]);
+        }
+    }
+
     public function postMonitoringData(Request $request) {
         $validated = $request->validate([
             'voltage' => 'required',
@@ -25,6 +105,8 @@ class MonitoringApiController extends Controller
         $validated['total_price'] = $validated['energy'] * $tax->tax;
 
         $record =  Monitorings::create($validated);
+
+        $this->autoCheckedReset();
 
         return response()->json([
             'success' => true,

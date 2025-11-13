@@ -15,6 +15,8 @@ Route::prefix('monitoring')->group( function() {
     Route::post('/post-energy-data', [MonitoringApiController::class, 'postMonitoringData']);
     Route::get('/realtime-chart', [MonitoringApiController::class, 'getRealtimeChart']);
     Route::get('/realtime-latest-data', [MonitoringApiController::class, 'getRealtimeMonitoringData']);
+    Route::get('/check-reset-kwh', [MonitoringApiController::class, 'checkResetkWh']);
+    Route::post('/confirm-reset', [MonitoringApiController::class, 'confirmReset']);
 });
 
 Route::prefix('switches')->group(function() {
